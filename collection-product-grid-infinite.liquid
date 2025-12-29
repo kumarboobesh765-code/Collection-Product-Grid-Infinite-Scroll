@@ -1,0 +1,132 @@
+{% comment %}
+  Collection Product Grid – Infinite Scroll
+  Full card clickable except Add to Cart
+{% endcomment %}
+
+{% liquid
+  assign show_section = false
+  assign active_collection = nil
+
+  if template.name == 'collection' and collection != blank
+    assign show_section = true
+    assign active_collection = collection
+  endif
+%}
+
+{% if show_section %}
+
+{{ 'collection-product-grid.css' | asset_url | stylesheet_tag }}
+{{ 'collection-product-grid.js' | asset_url | script_tag }}
+
+<section class="collection-product-card-section">
+  <div class="page-width">
+
+    {% if section.settings.heading != blank %}
+      <h2 class="collection-product-title">{{ section.settings.heading }}</h2>
+    {% endif %}
+
+    {% paginate active_collection.products by 24 %}
+      <div
+        class="collection-product-card-grid"
+        id="collection-product-grid"
+        data-next-page="{{ paginate.next.url }}"
+      >
+        {% for product in active_collection.products %}
+          <div
+            class="collection-product-card"
+            data-url="{{ product.url }}"
+          >
+
+            <!-- IMAGE -->
+            <div class="collection-product-card__image">
+              {% if product.compare_at_price > product.price %}
+                <span class="collection-product-badge">Sale</span>
+              {% endif %}
+              <img
+                src="{{ product.featured_image | image_url: width: 600 }}"
+                alt="{{ product.title }}"
+                loading="lazy">
+            </div>
+
+            <!-- CONTENT -->
+            <div class="collection-product-card__content">
+
+              <div class="collection-product-title-text">
+                {{ product.title }}
+              </div>
+
+              {% if product.tags.size > 0 %}
+                <div class="collection-product-tags">
+                  {% for tag in product.tags limit: 4 %}
+                    <span>{{ tag }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <div class="collection-product-rating"></div>
+
+              {% if product.compare_at_price > product.price %}
+                <div class="collection-product-price-row">
+                  <span class="collection-product-discount">
+                    {{ product.compare_at_price
+                      | minus: product.price
+                      | times: 100
+                      | divided_by: product.compare_at_price }}% OFF
+                  </span>
+                  <span class="collection-product-compare">
+                    Rs. {{ product.compare_at_price | money_without_currency }}
+                  </span>
+                </div>
+              {% endif %}
+
+              <div class="collection-product-final-price">
+                Rs. {{ product.price | money_without_currency }}
+              </div>
+
+              <button
+                class="collection-product-btn js-add-to-cart"
+                data-variant="{{ product.selected_or_first_available_variant.id }}"
+                {% unless product.selected_or_first_available_variant.available %}
+                  disabled
+                {% endunless %}
+              >
+                {% if product.selected_or_first_available_variant.available %}
+                  Add to Cart
+                {% else %}
+                  Sold Out
+                {% endif %}
+              </button>
+
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endpaginate %}
+
+    <div id="collection-infinite-loader" class="collection-loader">
+      Loading more products…
+    </div>
+
+  </div>
+</section>
+
+{% endif %}
+
+{% schema %}
+{
+  "name": "Collection Product Grid Infinite",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "⚡ Most Loved Products ⚡"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection Product Grid Infinite"
+    }
+  ]
+}
+{% endschema %}
